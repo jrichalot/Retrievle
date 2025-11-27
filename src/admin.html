@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Retrievle Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1 id="title">Retrievle – Admin Interface</h1>
+
+  <!-- Language selection -->
+  <div>
+    <label for="language" id="languageLabel">Language:</label>
+    <select id="language">
+      <option value="en" selected>English</option>
+      <option value="fr">Français</option>
+      <option value="hiragana">日本語 (ひらがな)</option>
+      <option value="katakana">日本語 (カタカナ)</option>
+      <option value="emoji">😀😁😂🤣😃</option>
+    </select>
+  </div>
+
+  <!-- Dynamic instructions -->
+  <div class="instructions" id="instructions"></div>
+
+  <!-- Word length -->
+  <label for="segmentLength" id="segmentLengthLabel">Number of letters to guess:</label>
+  <input type="number" id="segmentLength" min="1" max="10" value="5" />
+
+  <br><br>
+
+  <!-- Max attempts -->
+  <label for="maxAttempts" id="maxAttemptsLabel">Maximum number of attempts:</label>
+  <input type="number" id="maxAttempts" min="1" max="12" value="6" />
+
+  <br><br>
+
+  <!-- Hints -->
+  <fieldset>
+    <legend id="hintsLegend">Hints</legend>
+    <div id="hintsContainer">
+      <label for="hint1" class="hintLabel">Hint 1:</label>
+      <input type="text" id="hint1" size="50" /><br>
+      <label for="hint2" class="hintLabel">Hint 2:</label>
+      <input type="text" id="hint2" size="50" /><br>
+      <label for="hint3" class="hintLabel">Hint 3:</label>
+      <input type="text" id="hint3" size="50" /><br>
+      <label for="hint4" class="hintLabel">Hint 4:</label>
+      <input type="text" id="hint4" size="50" /><br>
+      <label for="hint5" class="hintLabel">Hint 5:</label>
+      <input type="text" id="hint5" size="50" /><br><br>
+    </div>
+
+    <label for="hintOrder" id="hintOrderLabel">Order of hints:</label>
+    <select id="hintOrder">
+      <option value="sequential" selected>Sequential</option>
+      <option value="random">Random</option>
+    </select>
+  </fieldset>
+
+  <br>
+
+  <!-- Word + keyboard -->
+  <div id="word" class="row"></div>
+  <div id="keyboard" class="keyboard"></div>
+
+  <!-- Validate -->
+  <button id="validateBtn">Validate</button>
+  <script type="module" src="./admin.js"></script>
+  
+</body>
+</html>

@@ -13,11 +13,14 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,   // disables Node in renderer (safer)
+      contextIsolation: true,   // keeps preload API separate
+      sandbox: true, //enables full browser-like sandbox
     },
   });
 
-  // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  // and load the admin.html of the app.
+  mainWindow.loadFile(path.join(__dirname, 'admin.html'));
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
