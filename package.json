@@ -1,0 +1,19 @@
+{
+  "name": "retrievle",
+  "version": "1.0.0",
+  "description": "Retrievle – a browser-based word game",
+  "main": "index.html",
+  "scripts": {
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [],
+  "author": {
+    "name": "Jerome Richalot",
+    "email": "jrichalot@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://jrichalot.github.io/Retrievle",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
+}
