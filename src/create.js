@@ -1,47 +1,67 @@
-// ==================== KEYBOARD ARRAYS ====================
-
-import { KEYBOARDS } from './keyboardArrays.js';
-import { translations } from './translations.js';
-
-// use KEYBOARDS
-const keys_en = KEYBOARDS.en;
-const keys_fr = KEYBOARDS.fr;
-const keys_hiragana = KEYBOARDS.hiragana;
-const keys_katakana = KEYBOARDS.katakana;
-const keys_emoji = KEYBOARDS.emoji;
-
+// ==================== IMPORTS ====================
+import { KEYBOARDS } from "./keyboardArrays.js";
+import { translations } from "./translations.js";
 
 // ==================== GLOBAL STATE ====================
-let currentWord = "";
+let currentTokens = [];            // Token-based
 let tiles = [];
 let selectedStartIndex = null;
+
 let segmentLength = 5;
 let maxAttempts = 6;
 let hintOrder = "sequential";
-let currentLang = "en"; // default
 
-// ==================== UI RENDERING ====================
+let keyboardLang = "en";           // drives KEYBOARDS
+let uiLang = "en";                 // drives translations (fallback to EN if missing)
+
+// ==================== LANGUAGE SELECTOR ====================
+function renderLanguageSelector() {
+  const select = document.getElementById("language");
+  select.innerHTML = "";
+
+  const labels = {
+    en: "English",
+    fr: "Français",
+    hiragana: "日本語 (ひらがな)",
+    katakana: "日本語 (カタカナ)",
+    emoji: "Emoji"
+  };
+
+  Object.keys(KEYBOARDS).forEach(lang => {
+    const option = document.createElement("option");
+    option.value = lang;
+    option.textContent = labels[lang] || lang;
+    select.appendChild(option);
+  });
+
+  select.value = keyboardLang;
+}
+
+// ==================== UI TEXT ====================
 function updateUI() {
-  const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
+  const t = translations[uiLang]?.admin || translations["en"].admin;
 
-  document.querySelector("h1").innerHTML = t.title;
-  document.querySelector(".instructions").innerHTML = t.instructions;
-  document.querySelector("label[for='segmentLength']").innerHTML = t.segmentLengthLabel;
-  document.querySelector("label[for='maxAttempts']").innerHTML = t.maxAttemptsLabel;
-  document.querySelector("fieldset legend").innerHTML = t.hintsLegend;
+  document.querySelector("h1").textContent = t.title;
+  document.querySelector(".instructions").textContent = t.instructions;
+  document.querySelector("label[for='segmentLength']").textContent = t.segmentLengthLabel;
+  document.querySelector("label[for='maxAttempts']").textContent = t.maxAttemptsLabel;
+  document.querySelector("fieldset legend").textContent = t.hintsLegend;
 
   for (let i = 1; i <= 5; i++) {
-    document.querySelector(`label[for='hint1']`).innerHTML = t.hintLabel(1);
-    document.querySelector(`label[for='hint2']`).innerHTML = t.hintLabel(2);
-    document.querySelector(`label[for='hint3']`).innerHTML = t.hintLabel(3);
-    document.querySelector(`label[for='hint4']`).innerHTML = t.hintLabel(4);
-    document.querySelector(`label[for='hint5']`).innerHTML = t.hintLabel(5);
+    const label = document.querySelector(`label[for='hint${i}']`);
+    if (label) label.textContent = t.hintLabel(i);
   }
 
-  document.querySelector("label[for='hintOrder']").innerHTML = t.hintOrderLabel;
-  document.querySelector("#hintOrder option[value='sequential']").innerHTML = t.hintOrderSequential;
-  document.querySelector("#hintOrder option[value='random']").innerHTML = t.hintOrderRandom;
-  document.getElementById("validateBtn").innerHTML = t.validateButton;
+  const hintOrderLabel = document.querySelector("label[for='hintOrder']");
+  if (hintOrderLabel) hintOrderLabel.textContent = t.hintOrderLabel;
+
+  const sequentialOption = document.querySelector("#hintOrder option[value='sequential']");
+  const randomOption = document.querySelector("#hintOrder option[value='random']");
+  if (sequentialOption) sequentialOption.textContent = t.hintOrderSequential;
+  if (randomOption) randomOption.textContent = t.hintOrderRandom;
+
+  const validateBtn = document.getElementById("validateBtn");
+  if (validateBtn) validateBtn.textContent = t.validateButton;
 }
 
 // ==================== WORD TILES ====================
@@ -50,28 +70,28 @@ function renderWordTiles() {
   wordDiv.innerHTML = "";
   tiles = [];
 
-  for (let i = 0; i < currentWord.length; i++) {
+  currentTokens.forEach((token, i) => {
     const tile = document.createElement("div");
     tile.className = "tile";
-    tile.textContent = currentWord[i] || "";
+    tile.textContent = token;
     tile.dataset.index = i;
 
     tile.addEventListener("click", () => {
       if (
-        currentWord.length >= segmentLength &&
-        i <= currentWord.length - segmentLength
+        currentTokens.length >= segmentLength &&
+        i <= currentTokens.length - segmentLength
       ) {
         selectedStartIndex = i;
         highlightSelectedTiles();
       } else {
-        const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
+        const t = translations[uiLang]?.admin || translations["en"].admin;
         alert(t.alerts.selectSegment(segmentLength));
       }
     });
 
     tiles.push(tile);
     wordDiv.appendChild(tile);
-  }
+  });
 
   highlightSelectedTiles();
 }
@@ -90,40 +110,38 @@ function highlightSelectedTiles() {
 }
 
 // ==================== KEYBOARD ====================
-function handleKey(key) {
-  if (key === "DEL") {
-    currentWord = currentWord.slice(0, -1);
+function handleKey(token) {
+  if (token === "DEL") {
+    currentTokens.pop();
     if (
       selectedStartIndex !== null &&
-      selectedStartIndex > currentWord.length - segmentLength
+      selectedStartIndex > currentTokens.length - segmentLength
     ) {
       selectedStartIndex = null;
     }
-  } else if (key === "ENTER") {
+  } else if (token === "ENTER") {
     saveGameSettings();
-  } else if (currentWord.length < 10) {
-    currentWord += key;
+    return;
+  } else if (currentTokens.length < 10) {
+    currentTokens.push(token);
   }
 
   renderWordTiles();
 }
 
 function getActiveKeys() {
-  if (currentLang === "fr") return [...keys_fr, "DEL", "ENTER"];
-  if (currentLang === "en") return [...keys_en, "DEL", "ENTER"];
-  if (currentLang === "hiragana") return [...keys_hiragana, "DEL", "ENTER"];
-  if (currentLang === "katakana") return [...keys_katakana, "DEL", "ENTER"];
-  if (currentLang === "emoji") return [...keys_emoji, "DEL", "ENTER"];
+  return [...KEYBOARDS[keyboardLang], "DEL", "ENTER"];
 }
 
 function renderKeyboard() {
   const kb = document.getElementById("keyboard");
   kb.innerHTML = "";
-  getActiveKeys().forEach(key => {
+
+  getActiveKeys().forEach(token => {
     const btn = document.createElement("div");
     btn.className = "key";
-    btn.textContent = key;
-    btn.addEventListener("click", () => handleKey(key));
+    btn.textContent = token;
+    btn.addEventListener("click", () => handleKey(token));
     kb.appendChild(btn);
   });
 }
@@ -132,71 +150,79 @@ function renderKeyboard() {
 function collectHints() {
   const hints = [];
   for (let i = 1; i <= 5; i++) {
-    const hintValue = document.getElementById(`hint${i}`).value.trim();
-    if (hintValue) {
-      hints.push(hintValue);
-    }
+    const value = document.getElementById(`hint${i}`)?.value.trim();
+    if (value) hints.push(value);
   }
   return hints;
 }
 
-// ==================== SAVE ====================
+// ==================== SAVE GAME ====================
 function saveGameSettings() {
-  const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
+  const t = translations[uiLang]?.admin || translations["en"].admin;
 
-  if (currentWord.length < 5 || currentWord.length > 10) {
+  if (currentTokens.length < segmentLength) {
     alert(t.alerts.wordLength);
     return;
   }
+
   if (selectedStartIndex === null) {
     alert(t.alerts.selectSegment(segmentLength));
     return;
   }
-  
-  const wordToGuess = currentWord
-    .slice(selectedStartIndex, selectedStartIndex + segmentLength)
-    .toUpperCase();
 
-  const hints = collectHints();
+  const wordToGuessTokens = currentTokens.slice(
+    selectedStartIndex,
+    selectedStartIndex + segmentLength
+  );
 
-  localStorage.setItem("wordToGuess", wordToGuess);
-  localStorage.setItem("fullWord", currentWord.toUpperCase());
+  localStorage.setItem("wordToGuess", JSON.stringify(wordToGuessTokens));
+  localStorage.setItem("fullWord", JSON.stringify(currentTokens));
   localStorage.setItem("segmentLength", segmentLength);
   localStorage.setItem("maxAttempts", maxAttempts);
-  localStorage.setItem("hints", JSON.stringify(hints));
+  localStorage.setItem("hints", JSON.stringify(collectHints()));
   localStorage.setItem("hintOrder", hintOrder);
-  localStorage.setItem("language", currentLang);
+  localStorage.setItem("language", keyboardLang);
 
   alert(
-    t.alerts.saved(wordToGuess, maxAttempts, hints.length, hintOrder)
+    t.alerts.saved(
+      wordToGuessTokens.join(" "),
+      maxAttempts,
+      collectHints().length,
+      hintOrder
+    )
   );
 }
 
 // ==================== EVENT LISTENERS ====================
 document.getElementById("validateBtn").addEventListener("click", saveGameSettings);
 
-document.getElementById("segmentLength").addEventListener("input", (e) => {
+document.getElementById("segmentLength").addEventListener("input", e => {
   segmentLength = parseInt(e.target.value, 10);
   selectedStartIndex = null;
   renderWordTiles();
 });
 
-document.getElementById("maxAttempts").addEventListener("input", (e) => {
+document.getElementById("maxAttempts").addEventListener("input", e => {
   maxAttempts = parseInt(e.target.value, 10);
 });
 
-document.getElementById("hintOrder").addEventListener("change", (e) => {
+document.getElementById("hintOrder").addEventListener("change", e => {
   hintOrder = e.target.value;
 });
 
-document.getElementById("language").addEventListener("change", (e) => {
-  currentLang = e.target.value;
+document.getElementById("language").addEventListener("change", e => {
+  keyboardLang = e.target.value;
+  if (translations[keyboardLang]) {
+    uiLang = keyboardLang; // only switch UI text for EN or FR
+  }
+
   updateUI();
   renderKeyboard();
   renderWordTiles();
 });
 
 // ==================== INIT ====================
+renderLanguageSelector();
 updateUI();
-renderWordTiles();
 renderKeyboard();
+renderWordTiles();
