@@ -1,0 +1,125 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 2em;
+}
+
+#game {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ROWS: allow wrapping so long tokens don’t overlap */
+.row {
+  display: flex;
+  justify-content: center;
+  margin: 0.3em 0;
+  gap: 6px;
+  flex-wrap: wrap;          /* ✅ key change */
+  align-items: stretch;
+}
+
+/* TILES: grow with content (words, emoji, etc.) */
+.tile {
+  display: inline-flex;     /* ✅ centers text nicely */
+  justify-content: center;
+  align-items: center;
+
+  min-width: 60px;          /* ✅ was fixed width; now minimum */
+  height: 60px;
+  padding: 0 12px;          /* ✅ gives room for words */
+  box-sizing: border-box;
+
+  border: 2px solid #ccc;
+  font-size: 2em;
+
+  white-space: nowrap;      /* ✅ keep one token on one line */
+  overflow: hidden;         /* ✅ prevent overlap */
+  text-overflow: ellipsis;  /* ✅ show … if extremely long */
+
+  /* Removed uppercase forcing */
+  /* text-transform: uppercase; */
+}
+
+.correct {
+  background-color: green;
+  color: white;
+}
+
+.present {
+  background-color: orange;
+  color: white;
+}
+
+.absent {
+  background-color: lightgray;
+}
+
+.keyboard {
+  margin-top: 30px;
+}
+
+/* WORD PREVIEW ROW in create.html */
+#word {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;          /* ✅ so long words wrap nicely */
+}
+
+/* Selected tiles in create.html */
+.tile.green {
+  background-color: #66bb6a;
+  color: white;
+  border-color: #388e3c;
+}
+
+/* KEYBOARD KEYS: also allow word-sized keys */
+.key {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  min-width: 40px;          /* ✅ was fixed width */
+  height: 50px;
+  padding: 0 10px;          /* ✅ room for words */
+  margin: 4px;
+
+  border-radius: 4px;
+  border: 1px solid #ccc;
+
+  background-color: lightgray;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+
+  white-space: nowrap;      /* ✅ keep token intact */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.key.disabled {
+  background-color: #eee;
+  color: #aaa;
+  pointer-events: none;
+}
+
+.key.correct {
+  background-color: #6aaa64; /* green */
+  color: white;
+}
+
+.key.present {
+  background-color: #c9b458; /* yellow */
+  color: white;
+}
+
+.key.absent {
+  background-color: #787c7e; /* dark grey */
+  color: white;
+}
