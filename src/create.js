@@ -1,7 +1,7 @@
 // ==================== KEYBOARD ARRAYS ====================
 
 import { KEYBOARDS } from './keyboardArrays.js';
-import { TRANSLATIONS } from './translations.js';
+import { translations } from './translations.js';
 
 // use KEYBOARDS
 const keys_en = KEYBOARDS.en;
@@ -9,7 +9,6 @@ const keys_fr = KEYBOARDS.fr;
 const keys_hiragana = KEYBOARDS.hiragana;
 const keys_katakana = KEYBOARDS.katakana;
 const keys_emoji = KEYBOARDS.emoji;
-
 
 
 // ==================== GLOBAL STATE ====================
@@ -23,7 +22,7 @@ let currentLang = "en"; // default
 
 // ==================== UI RENDERING ====================
 function updateUI() {
-  const t = TRANSLATIONS[currentLang === "fr" ? "fr" : "en"];
+  const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
 
   document.querySelector("h1").innerHTML = t.title;
   document.querySelector(".instructions").innerHTML = t.instructions;
@@ -65,7 +64,7 @@ function renderWordTiles() {
         selectedStartIndex = i;
         highlightSelectedTiles();
       } else {
-        const t = translations[currentLang === "fr" ? "fr" : "en"];
+        const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
         alert(t.alerts.selectSegment(segmentLength));
       }
     });
@@ -143,7 +142,7 @@ function collectHints() {
 
 // ==================== SAVE ====================
 function saveGameSettings() {
-  const t = translations[currentLang === "fr" ? "fr" : "en"];
+  const t = translations[currentLang === "fr" ? "fr" : "en"].admin;
 
   if (currentWord.length < 5 || currentWord.length > 10) {
     alert(t.alerts.wordLength);
