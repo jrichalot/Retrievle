@@ -60,5 +60,68 @@ export const KEYBOARDS = {
 
     // Symbols
     "❤️","💛","💚","💙","💜","🖤"
+  ],
+
+  fr_food: [
+    // Pronouns
+    "je", "j'","tu", "il", "elle",
+  
+    // Verbs (present tense, high frequency)
+    "mange", "aime", "adore", "déteste",
+  
+    // Articles / determiners
+    "une", "un", "les",
+  
+    // Food – fruits
+    "pomme", "banane", "fraise", "orange",
+  
+    // Food – meals & snacks
+    "pain", "fromage", "pizza", "gâteau",
+  
+    // Food – drinks
+    "eau", "lait", "jus",
+  
+    // Extras / connectors
+    "avec", "sans", "et"
+  ],
+
+  zh_basic: [
+    // Pronouns
+    "我",   // I
+    "你",   // you
+    "他",   // he
+    "她",   // she
+  
+    // Verbs
+    "吃",   // eat
+    "喝",   // drink
+    "爱",   // love / like
+    "有",   // have
+    "要",   // want
+  
+    // Food / drink
+    "饭",   // meal / rice
+    "面",   // noodles
+    "水",   // water
+    "茶",   // tea
+    "果",   // fruit
+  
+    // Modifiers / helpers
+    "很",   // very
+    "不",   // not
+    "也",   // also
+    "吗",   // question particle
+  
+    // Time / quantity
+    "一",   // one
+    "点",   // a little / o'clock (contextual)
+    "多",   // many / much
+  
+    // Connectors / particles
+    "的",   // possessive / modifier
+    "在",   // at / in
+    "和"    // and
   ]
+  
+  
 };

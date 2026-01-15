@@ -8,10 +8,10 @@ export const translations = {
     admin: {
       title: "Retrievle – Teacher Version",
       instructions: `
-        <p>Enter a word of 5 to 10 characters using the keyboard below.</p>
-        <p>Select how many consecutive characters must be guessed.</p>
-        <p>Set the maximum number of attempts allowed.</p>
-        <p>Add up to 5 hints (optional). They can be given sequentially or randomly.</p>
+        Enter a word of 5 to 10 characters using the keyboard below.
+        Select how many consecutive characters must be guessed.
+        Set the maximum number of attempts allowed.
+        Add up to 5 hints (optional). They can be given sequentially or randomly.
       `,
       segmentLengthLabel: "Number of characters to guess:",
       maxAttemptsLabel: "Maximum number of attempts:",
@@ -49,10 +49,10 @@ export const translations = {
     admin: {
       title: "Retrievle – Version Enseignant",
       instructions: `
-        <p>Entrez un mot de 5 à 10 lettres à l’aide du clavier ci-dessous.</p>
-        <p>Choisissez le nombre de lettres consécutives à deviner.</p>
-        <p>Définissez le nombre maximum de tentatives.</p>
-        <p>Ajoutez jusqu’à 5 indices (facultatifs), séquentiels ou aléatoires.</p>
+        Entrez un mot de 5 à 10 lettres à l’aide du clavier ci-dessous.
+        Choisissez le nombre de lettres consécutives à deviner.
+        Définissez le nombre maximum de tentatives.
+        Ajoutez jusqu’à 5 indices (facultatifs), séquentiels ou aléatoires.
       `,
       segmentLengthLabel: "Nombre de lettres à deviner :",
       maxAttemptsLabel: "Nombre maximum de tentatives :",
