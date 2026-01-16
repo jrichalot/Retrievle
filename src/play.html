@@ -6,23 +6,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="create.css" />
 </head>
+
 <body>
 
-  <h1>Retrievle – Player</h1>
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-logo" src="../assets/icon.png" alt="Logo" />
+      <div class="brand-title">
+        <h1 id="title">RetrievLe</h1>
+        <div class="brand-subtitle">Player Interface</div>
+      </div>
+    </div>
+  </header>
 
-  <p>
-    Attempts remaining:
-    <strong id="attempts">0</strong>
-  </p>
+  <!-- Main aligned content column -->
+  <main class="content">
 
-  <!-- Game board -->
-  <div id="game" class="game-board"></div>
+    <!-- Status -->
+    <p>
+      Attempts remaining:
+      <strong id="attempts">0</strong>
+    </p>
 
-  <!-- On-screen keyboard -->
-  <div id="keyboard" class="keyboard"></div>
+    <!-- Game board -->
+    <div id="game" class="game-board"></div>
 
-  <!-- Hint button -->
-  <button id="hintBtn">💡 Hint</button>
+    <!-- On-screen keyboard -->
+    <div id="keyboard" class="keyboard"></div>
+
+    <!-- Player actions -->
+    <div class="actions">
+      <button id="hintBtn" type="button">💡 Hint</button>
+    </div>
+
+  </main>
 
   <!-- ES module -->
   <script type="module" src="./play.js"></script>
