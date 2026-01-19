@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retrievle – Keyboard Manager</title>
+  <link rel="stylesheet" href="create.css" />
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-logo" src="../assets/icon.png" alt="Logo" />
+      <div class="brand-title">
+        <h1>Retrievle</h1>
+        <div class="brand-subtitle">Keyboard Manager</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+        <button
+          type="button"
+          class="home-btn"
+          onclick="window.location.href='../index.html'"
+          aria-label="Home"
+        >
+          🏠 Home
+        </button>
+      </div>
+      
+  </header>
+
+  <main class="content">
+    <div class="field-row">
+      <label for="kbSelect">Keyboards</label>
+      <select id="kbSelect"></select>
+    </div>
+
+    <div class="actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button id="createKbBtn" type="button">Create</button>
+      <button id="renameKbBtn" type="button">Rename</button>
+      <button id="duplicateKbBtn" type="button">Duplicate</button>
+      <button id="deleteKbBtn" type="button">Delete</button>
+    </div>
+
+    <div class="actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button id="exportBtn" type="button">Export JSON</button>
+      <button id="importBtn" type="button">Import JSON</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none;" />
+      <a href="./create.html" style="align-self:center;">← Back to game setup</a>
+    </div>
+
+    <div class="instructions" style="margin-top:18px;">
+      <strong>How this works:</strong>
+      <ul style="margin:10px 0 0; padding-left:18px;">
+        <li>English, French, Hiragana, Katakana are protected.</li>
+        <li>Your keyboards are stored only on this device (localStorage).</li>
+        <li>Use Export/Import to move keyboards between devices.</li>
+      </ul>
+    </div>
+
+    <fieldset style="margin-top:18px;">
+      <legend>Tokens</legend>
+
+      <div class="field-row">
+        <label for="tokensText">Edit tokens (comma / new line separated)</label>
+        <textarea id="tokensText" rows="6" style="width:min(720px,100%); padding:10px 12px; border-radius:12px; background:rgba(255,255,255,0.06); color:inherit; border:1px solid rgba(255,255,255,0.18);"></textarea>
+      </div>
+
+      <div class="actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="saveTokensBtn" type="button">Save tokens</button>
+      </div>
+    </fieldset>
+
+    <fieldset style="margin-top:18px;">
+      <legend>Preview</legend>
+      <div id="preview" class="row" style="padding:14px;"></div>
+    </fieldset>
+  </main>
+
+  <script type="module" src="./keyboards.js"></script>
+</body>
+</html>

@@ -1,15 +1,15 @@
 // ==================== IMPORTS ====================
-import { KEYBOARDS } from "./keyboardArrays.js";
 import { translations } from "./translations.js";
+import { getKeyboardById } from "./keyboardStore.js";
 
 // ==================== GLOBAL STATE ====================
 let fullWordTokens = [];
 let wordOfTheDayTokens = [];
 
-let selectedIndices = [];     // ✅ non-consecutive indices to guess (sorted)
-let guessSlots = [];          // alias for clarity
+let selectedIndices = [];     // non-consecutive indices to guess (sorted)
+let guessSlots = [];
 
-let currentGuess = [];        // tokens entered by player (length <= segmentLength)
+let currentGuess = [];
 let currentRow = 0;
 let maxGuesses = 6;
 let segmentLength = 5;
@@ -19,8 +19,9 @@ let correctTokens = new Set();
 let presentTokens = new Set();
 let absentTokens = new Set();
 
-let keyboardLang = "en"; // drives KEYBOARDS
-let uiLang = "en";       // drives translations (fallback)
+// Keyboard handling
+let keyboardId = "builtin:en";
+let uiLang = "en";
 
 // ==================== HELPERS ====================
 function getPlayTranslations() {
@@ -37,6 +38,24 @@ function safeParseJSON(key, fallback) {
   }
 }
 
+function setUiLangFromKeyboardId() {
+  const kb = getKeyboardById(keyboardId);
+  if (!kb) {
+    uiLang = "en";
+    return;
+  }
+
+  if (kb.kind === "builtin") {
+    const key = keyboardId.replace("builtin:", "");
+    if (translations[key]) {
+      uiLang = key;
+      return;
+    }
+  }
+
+  uiLang = "en";
+}
+
 // ==================== LOAD GAME SETUP ====================
 fullWordTokens = safeParseJSON("fullWord", []);
 wordOfTheDayTokens = safeParseJSON("wordToGuess", []);
@@ -45,8 +64,14 @@ selectedIndices = safeParseJSON("selectedIndices", []);
 segmentLength = parseInt(localStorage.getItem("segmentLength"), 10);
 maxGuesses = parseInt(localStorage.getItem("maxAttempts"), 10);
 
-keyboardLang = localStorage.getItem("language") || "en";
-uiLang = ["en", "fr"].includes(keyboardLang) ? keyboardLang : "en";
+// NEW keyboard system
+keyboardId =
+  localStorage.getItem("keyboardId") ||
+  (localStorage.getItem("language")
+    ? `builtin:${localStorage.getItem("language")}`
+    : "builtin:en");
+
+setUiLangFromKeyboardId();
 
 // Validate setup
 if (
@@ -59,42 +84,39 @@ if (
   throw new Error("Missing or invalid game setup.");
 }
 
-// Basic consistency checks
+// Normalize & validate indices
 selectedIndices = selectedIndices
-  .map(n => Number(n))
-  .filter(n => Number.isInteger(n))
+  .map(Number)
+  .filter(Number.isInteger)
   .sort((a, b) => a - b);
 
 if (selectedIndices.length !== segmentLength) {
   alert(getPlayTranslations().alerts.missingSetup);
-  throw new Error("Invalid setup: selectedIndices does not match segmentLength.");
+  throw new Error("selectedIndices does not match segmentLength");
 }
 
 if (selectedIndices.some(i => i < 0 || i >= fullWordTokens.length)) {
   alert(getPlayTranslations().alerts.missingSetup);
-  throw new Error("Invalid setup: selectedIndices out of range.");
+  throw new Error("selectedIndices out of range");
 }
 
-// (Optional but helpful) ensure the saved answer matches fullWord at those indices
+// Ensure consistency
 const derivedAnswer = selectedIndices.map(i => fullWordTokens[i]);
-const sameAnswer =
-  derivedAnswer.length === wordOfTheDayTokens.length &&
-  derivedAnswer.every((t, idx) => t === wordOfTheDayTokens[idx]);
-
-if (!sameAnswer) {
-  // Not fatal, but it means setup was inconsistent; better to fail fast
+if (!derivedAnswer.every((t, i) => t === wordOfTheDayTokens[i])) {
   alert(getPlayTranslations().alerts.missingSetup);
-  throw new Error("Invalid setup: wordToGuess does not match fullWord at selectedIndices.");
+  throw new Error("wordToGuess mismatch");
 }
 
-// Clear one-time storage (keep hints + hintOrder if you want them to persist until used)
-localStorage.removeItem("fullWord");
-localStorage.removeItem("wordToGuess");
-localStorage.removeItem("selectedIndices");
-localStorage.removeItem("segmentLength");
-localStorage.removeItem("maxAttempts");
+// Cleanup one-time setup values
+[
+  "fullWord",
+  "wordToGuess",
+  "selectedIndices",
+  "segmentLength",
+  "maxAttempts",
+].forEach(k => localStorage.removeItem(k));
 
-// Slots to fill (left-to-right)
+// Guess slots (left → right)
 guessSlots = selectedIndices;
 
 // ==================== HINTS ====================
@@ -106,25 +128,17 @@ let hintIndex = 0;
 function getNextHint() {
   const t = getPlayTranslations();
 
-  if (!Array.isArray(hints) || hints.length === 0) {
-    alert(t.alerts.noHints);
-    return;
-  }
+  if (!hints.length) return alert(t.alerts.noHints);
 
   if (hintOrder === "sequential") {
-    if (hintIndex >= hints.length) {
-      alert(t.alerts.noMoreHints);
-      return;
-    }
-    alert(hints[hintIndex]);
-    hintIndex++;
+    if (hintIndex >= hints.length) return alert(t.alerts.noMoreHints);
+    alert(hints[hintIndex++]);
   } else {
-    if (usedHints.length >= hints.length) {
-      alert(t.alerts.noMoreHints);
-      return;
-    }
-    const available = hints.map((_, i) => i).filter(i => !usedHints.includes(i));
-    const i = available[Math.floor(Math.random() * available.length)];
+    if (usedHints.length >= hints.length) return alert(t.alerts.noMoreHints);
+    const remaining = hints
+      .map((_, i) => i)
+      .filter(i => !usedHints.includes(i));
+    const i = remaining[Math.floor(Math.random() * remaining.length)];
     usedHints.push(i);
     alert(hints[i]);
   }
@@ -132,13 +146,13 @@ function getNextHint() {
 
 document.getElementById("hintBtn")?.addEventListener("click", getNextHint);
 
-// ==================== GAME UI ====================
+// ==================== UI ====================
 function updateAttemptsUI() {
   const el = document.getElementById("attempts");
   if (el) el.textContent = String(maxGuesses - currentRow);
 }
 
-// ==================== INIT GAME ====================
+// ==================== GAME INIT ====================
 function startGame() {
   gameActive = true;
   currentGuess = [];
@@ -169,7 +183,6 @@ function renderBoard() {
       tile.className = "tile";
       tile.id = `tile-${r}-${c}`;
 
-      // Reveal tiles not in the guess set
       if (!guessable.has(c)) {
         tile.textContent = fullWordTokens[c];
         tile.classList.add("correct");
@@ -185,8 +198,8 @@ function renderBoard() {
 
 // ==================== KEYBOARD ====================
 function getActiveKeys() {
-  const keys = KEYBOARDS[keyboardLang] || KEYBOARDS.en;
-  return [...keys, "DEL", "ENTER"];
+  const kb = getKeyboardById(keyboardId);
+  return [...(kb?.tokens || []), "DEL", "ENTER"];
 }
 
 function renderKeyboard() {
@@ -225,64 +238,56 @@ function handleKey(key) {
 }
 
 function updateTiles() {
-  // Place the current guess into the non-consecutive slots for the current row
   for (let i = 0; i < segmentLength; i++) {
     const col = guessSlots[i];
     const tile = document.getElementById(`tile-${currentRow}-${col}`);
-    if (!tile) continue;
-
-    tile.textContent = currentGuess[i] || "";
+    if (tile) tile.textContent = currentGuess[i] || "";
   }
 }
 
 // ==================== GAME LOGIC ====================
 function checkGuess() {
   const t = getPlayTranslations();
-  const guess = currentGuess.slice(); // tokens
+  const guess = currentGuess.slice();
   const feedback = Array(segmentLength).fill("absent");
 
-  // Use counts to support duplicates correctly
-  const answerCounts = new Map();
-  for (const tok of wordOfTheDayTokens) {
-    answerCounts.set(tok, (answerCounts.get(tok) || 0) + 1);
-  }
+  const counts = new Map();
+  wordOfTheDayTokens.forEach(tok =>
+    counts.set(tok, (counts.get(tok) || 0) + 1)
+  );
 
-  // 1) Correct
+  // Correct
   for (let i = 0; i < segmentLength; i++) {
     if (guess[i] === wordOfTheDayTokens[i]) {
       feedback[i] = "correct";
-      answerCounts.set(guess[i], answerCounts.get(guess[i]) - 1);
+      counts.set(guess[i], counts.get(guess[i]) - 1);
     }
   }
 
-  // 2) Present
+  // Present
   for (let i = 0; i < segmentLength; i++) {
-    if (feedback[i] === "correct") continue;
-
+    if (feedback[i] !== "absent") continue;
     const tok = guess[i];
-    const remaining = answerCounts.get(tok) || 0;
-    if (remaining > 0) {
+    if ((counts.get(tok) || 0) > 0) {
       feedback[i] = "present";
-      answerCounts.set(tok, remaining - 1);
+      counts.set(tok, counts.get(tok) - 1);
     }
   }
 
-  // Apply feedback to tiles + token sets
+  // Apply
   for (let i = 0; i < segmentLength; i++) {
     const col = guessSlots[i];
     const tile = document.getElementById(`tile-${currentRow}-${col}`);
     if (!tile) continue;
 
-    tile.classList.remove("correct", "present", "absent");
     tile.classList.add(feedback[i]);
 
     if (feedback[i] === "correct") {
       correctTokens.add(guess[i]);
-      presentTokens.delete(guess[i]); // correct overrides present
+      presentTokens.delete(guess[i]);
       absentTokens.delete(guess[i]);
     } else if (feedback[i] === "present") {
       if (!correctTokens.has(guess[i])) presentTokens.add(guess[i]);
-      absentTokens.delete(guess[i]);
     } else {
       if (!correctTokens.has(guess[i]) && !presentTokens.has(guess[i])) {
         absentTokens.add(guess[i]);
@@ -290,10 +295,7 @@ function checkGuess() {
     }
   }
 
-  // Win / lose
-  const won = guess.every((tok, i) => tok === wordOfTheDayTokens[i]);
-
-  if (won) {
+  if (guess.every((t, i) => t === wordOfTheDayTokens[i])) {
     alert(t.alerts.win);
     gameActive = false;
     renderKeyboard();
@@ -305,11 +307,8 @@ function checkGuess() {
   updateAttemptsUI();
 
   if (currentRow >= maxGuesses) {
-    // Show full phrase/word to player
     alert(t.alerts.lose(fullWordTokens.join(" ")));
     gameActive = false;
-    renderKeyboard();
-    return;
   }
 
   renderKeyboard();

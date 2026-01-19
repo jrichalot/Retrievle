@@ -358,4 +358,33 @@ button:hover{
   .key{
     vertical-align: middle;
   }
-    
+  
+  /* Header home button */
+.header-actions{
+  display: flex;
+  align-items: center;
+}
+
+.home-btn{
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(209,176,106,0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(209,176,106,0.18),
+    rgba(176,138,74,0.10)
+  );
+  color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+.home-btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(209,176,106,0.55);
+}
+
+.home-btn:active{
+  transform: translateY(0);
+}
