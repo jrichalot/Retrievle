@@ -1,26 +1,40 @@
 // ==================== IMPORTS ====================
-import { KEYBOARDS } from "./keyboardArrays.js";
 import { translations } from "./translations.js";
+import {
+  getKeyboardOptions,
+  getKeyboardById,
+} from "./keyboardStore.js";
 
 // ==================== GLOBAL STATE ====================
-let currentTokens = [];               // Token-based
+let currentTokens = [];
 let tiles = [];
-let selectedIndices = new Set();      // ✅ non-consecutive selection
+let selectedIndices = new Set();
 
-let segmentLength = 5;                // N tiles to guess
+let segmentLength = 5;
 let maxAttempts = 6;
 let hintOrder = "sequential";
 
-let keyboardLang = "en";              // drives KEYBOARDS
-let uiLang = "en";                    // drives translations (fallback to EN if missing)
+// NEW keyboard system
+let keyboardId = "builtin:en";
+let uiLang = "en";
 
 // ==================== HELPERS ====================
 function getAdminTranslations() {
   return translations[uiLang]?.admin || translations["en"].admin;
 }
 
+function setUiLangFromKeyboardId() {
+  const kb = getKeyboardById(keyboardId);
+  if (!kb || kb.kind !== "builtin") {
+    uiLang = "en";
+    return;
+  }
+
+  const key = keyboardId.replace("builtin:", "");
+  uiLang = translations[key] ? key : "en";
+}
+
 function normalizeSelectionToSegmentLength() {
-  // If N decreased, trim selection (remove highest indices first)
   while (selectedIndices.size > segmentLength) {
     const max = Math.max(...selectedIndices);
     selectedIndices.delete(max);
@@ -28,35 +42,32 @@ function normalizeSelectionToSegmentLength() {
 }
 
 function clampSelectionToTokenLength() {
-  // Remove any selected indices that are out of range after deletions
   const n = currentTokens.length;
   selectedIndices = new Set([...selectedIndices].filter(i => i >= 0 && i < n));
   normalizeSelectionToSegmentLength();
 }
 
-// ==================== LANGUAGE SELECTOR ====================
-function renderLanguageSelector() {
+// ==================== KEYBOARD SELECTOR ====================
+function renderKeyboardSelector() {
   const select = document.getElementById("language");
   select.innerHTML = "";
 
-  const labels = {
-    en: "English",
-    fr: "Français",
-    hiragana: "日本語 (ひらがな)",
-    katakana: "日本語 (カタカナ)",
-    emoji: "Emoji",
-    fr_food: "Français – Nourriture",
-    zh_basic: "中文 – 基础"
-  };
+  const options = getKeyboardOptions();
 
-  Object.keys(KEYBOARDS).forEach(lang => {
+  options.forEach(kb => {
     const option = document.createElement("option");
-    option.value = lang;
-    option.textContent = labels[lang] || lang;
+    option.value = kb.id;
+    option.textContent = kb.name;
     select.appendChild(option);
   });
 
-  select.value = keyboardLang;
+  // Restore previous selection if possible
+  if (getKeyboardById(keyboardId)) {
+    select.value = keyboardId;
+  } else {
+    keyboardId = "builtin:en";
+    select.value = keyboardId;
+  }
 }
 
 // ==================== UI TEXT ====================
@@ -64,11 +75,13 @@ function updateUI() {
   const t = getAdminTranslations();
 
   document.querySelector("h1").textContent = t.title;
-  // NOTE: if your instructions contain HTML, use innerHTML instead of textContent.
   document.querySelector(".instructions").innerHTML = t.instructions;
 
-  document.querySelector("label[for='segmentLength']").textContent = t.segmentLengthLabel;
-  document.querySelector("label[for='maxAttempts']").textContent = t.maxAttemptsLabel;
+  document.querySelector("label[for='segmentLength']").textContent =
+    t.segmentLengthLabel;
+  document.querySelector("label[for='maxAttempts']").textContent =
+    t.maxAttemptsLabel;
+
   document.querySelector("fieldset legend").textContent = t.hintsLegend;
 
   for (let i = 1; i <= 5; i++) {
@@ -79,10 +92,10 @@ function updateUI() {
   const hintOrderLabel = document.querySelector("label[for='hintOrder']");
   if (hintOrderLabel) hintOrderLabel.textContent = t.hintOrderLabel;
 
-  const sequentialOption = document.querySelector("#hintOrder option[value='sequential']");
-  const randomOption = document.querySelector("#hintOrder option[value='random']");
-  if (sequentialOption) sequentialOption.textContent = t.hintOrderSequential;
-  if (randomOption) randomOption.textContent = t.hintOrderRandom;
+  const seq = document.querySelector("#hintOrder option[value='sequential']");
+  const rnd = document.querySelector("#hintOrder option[value='random']");
+  if (seq) seq.textContent = t.hintOrderSequential;
+  if (rnd) rnd.textContent = t.hintOrderRandom;
 
   const validateBtn = document.getElementById("validateBtn");
   if (validateBtn) validateBtn.textContent = t.validateButton;
@@ -101,14 +114,11 @@ function renderWordTiles() {
     tile.dataset.index = i;
 
     tile.addEventListener("click", () => {
-      // Toggle selection
       if (selectedIndices.has(i)) {
         selectedIndices.delete(i);
       } else {
-        // Only allow selecting if we haven't reached N yet
         if (selectedIndices.size >= segmentLength) {
-          const t = getAdminTranslations();
-          alert(t.alerts.selectSegment(segmentLength));
+          alert(getAdminTranslations().alerts.selectSegment(segmentLength));
           return;
         }
         selectedIndices.add(i);
@@ -145,20 +155,20 @@ function handleKey(token) {
 }
 
 function getActiveKeys() {
-  const keys = KEYBOARDS[keyboardLang] || KEYBOARDS.en;
-  return [...keys, "DEL", "ENTER"];
+  const kb = getKeyboardById(keyboardId);
+  return [...(kb?.tokens || []), "DEL", "ENTER"];
 }
 
 function renderKeyboard() {
-  const kb = document.getElementById("keyboard");
-  kb.innerHTML = "";
+  const kbDiv = document.getElementById("keyboard");
+  kbDiv.innerHTML = "";
 
   getActiveKeys().forEach(token => {
     const btn = document.createElement("div");
     btn.className = "key";
     btn.textContent = token;
     btn.addEventListener("click", () => handleKey(token));
-    kb.appendChild(btn);
+    kbDiv.appendChild(btn);
   });
 }
 
@@ -166,8 +176,8 @@ function renderKeyboard() {
 function collectHints() {
   const hints = [];
   for (let i = 1; i <= 5; i++) {
-    const value = document.getElementById(`hint${i}`)?.value.trim();
-    if (value) hints.push(value);
+    const v = document.getElementById(`hint${i}`)?.value.trim();
+    if (v) hints.push(v);
   }
   return hints;
 }
@@ -176,13 +186,11 @@ function collectHints() {
 function saveGameSettings() {
   const t = getAdminTranslations();
 
-  // Require enough tokens to make a meaningful game
   if (currentTokens.length < segmentLength) {
     alert(t.alerts.wordLength);
     return;
   }
 
-  // Require exactly N selected tiles
   if (selectedIndices.size !== segmentLength) {
     alert(t.alerts.selectSegment(segmentLength));
     return;
@@ -191,19 +199,16 @@ function saveGameSettings() {
   const sortedIndices = [...selectedIndices].sort((a, b) => a - b);
   const wordToGuessTokens = sortedIndices.map(i => currentTokens[i]);
 
-  localStorage.setItem("wordToGuess", JSON.stringify(wordToGuessTokens));
   localStorage.setItem("fullWord", JSON.stringify(currentTokens));
-
-  // Keep segmentLength as "number of tiles to guess"
-  localStorage.setItem("segmentLength", segmentLength);
-
-  // ✅ NEW: store the indices so play.js can blank/reveal correctly
+  localStorage.setItem("wordToGuess", JSON.stringify(wordToGuessTokens));
   localStorage.setItem("selectedIndices", JSON.stringify(sortedIndices));
-
+  localStorage.setItem("segmentLength", segmentLength);
   localStorage.setItem("maxAttempts", maxAttempts);
   localStorage.setItem("hints", JSON.stringify(collectHints()));
   localStorage.setItem("hintOrder", hintOrder);
-  localStorage.setItem("language", keyboardLang);
+
+  // 🔑 NEW
+  localStorage.setItem("keyboardId", keyboardId);
 
   alert(
     t.alerts.saved(
@@ -216,42 +221,38 @@ function saveGameSettings() {
 }
 
 // ==================== EVENT LISTENERS ====================
-document.getElementById("validateBtn").addEventListener("click", saveGameSettings);
+document.getElementById("validateBtn")
+  .addEventListener("click", saveGameSettings);
 
-document.getElementById("segmentLength").addEventListener("input", e => {
-  segmentLength = parseInt(e.target.value, 10);
+document.getElementById("segmentLength")
+  .addEventListener("input", e => {
+    segmentLength = parseInt(e.target.value, 10);
+    normalizeSelectionToSegmentLength();
+    highlightSelectedTiles();
+  });
 
-  // Reset or trim selection if needed
-  normalizeSelectionToSegmentLength();
-  highlightSelectedTiles();
-});
+document.getElementById("maxAttempts")
+  .addEventListener("input", e => {
+    maxAttempts = parseInt(e.target.value, 10);
+  });
 
-document.getElementById("maxAttempts").addEventListener("input", e => {
-  maxAttempts = parseInt(e.target.value, 10);
-});
+document.getElementById("hintOrder")
+  .addEventListener("change", e => {
+    hintOrder = e.target.value;
+  });
 
-document.getElementById("hintOrder").addEventListener("change", e => {
-  hintOrder = e.target.value;
-});
-
-document.getElementById("language").addEventListener("change", e => {
-  keyboardLang = e.target.value;
-
-  // UI text only switches if translations exist for that lang
-  if (translations[keyboardLang]) {
-    uiLang = keyboardLang;
-  } else {
-    uiLang = "en";
-  }
-
-  updateUI();
-  renderKeyboard();
-  // Keep current tokens/selection; just rerender
-  renderWordTiles();
-});
+document.getElementById("language")
+  .addEventListener("change", e => {
+    keyboardId = e.target.value;
+    setUiLangFromKeyboardId();
+    updateUI();
+    renderKeyboard();
+    renderWordTiles();
+  });
 
 // ==================== INIT ====================
-renderLanguageSelector();
+renderKeyboardSelector();
+setUiLangFromKeyboardId();
 updateUI();
 renderKeyboard();
 renderWordTiles();
